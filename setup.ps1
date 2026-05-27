@@ -45,6 +45,46 @@ function Test-DockerComposeV2 {
     }
 }
 
+function Set-EnvValue {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Key,
+        [Parameter(Mandatory = $true)]
+        [string]$Value
+    )
+
+    $envFile = '.env'
+    $lines = @()
+
+    if (Test-Path $envFile) {
+        $lines = Get-Content $envFile
+    }
+
+    $updated = $false
+
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i] -match "^$([regex]::Escape($Key))=") {
+            $lines[$i] = "$Key=$Value"
+            $updated = $true
+        }
+    }
+
+    if (-not $updated) {
+        $lines += "$Key=$Value"
+    }
+
+    Set-Content -Path $envFile -Value $lines
+}
+
+function Sync-AppPortEnv {
+    if ([string]::IsNullOrWhiteSpace($env:APP_PORT)) {
+        return
+    }
+
+    Set-EnvValue -Key 'APP_PORT' -Value $env:APP_PORT
+    Set-EnvValue -Key 'APP_URL' -Value "http://localhost:$($env:APP_PORT)"
+}
+
 function Wait-ForMySql {
     $elapsed = 0
 
@@ -91,6 +131,8 @@ if (Test-Path .setup-complete) {
 if (-not (Test-Path .env)) {
     Copy-Item .env.example .env
 }
+
+Sync-AppPortEnv
 
 Invoke-External -Command @('docker', 'compose', 'up', '-d', '--build')
 Invoke-External -Command @('docker', 'compose', 'exec', '-T', 'app', 'sh', '-lc', 'mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs storage/api-docs && chmod -R 775 bootstrap/cache storage/framework storage/logs storage/api-docs')

@@ -19,6 +19,30 @@ require_docker_compose_v2() {
     fi
 }
 
+upsert_env_value() {
+    key=$1
+    value=$2
+    tmp_file=$(mktemp)
+
+    if grep -q "^${key}=" .env; then
+        sed "s|^${key}=.*|${key}=${value}|" .env >"$tmp_file"
+    else
+        cat .env >"$tmp_file"
+        printf '\n%s=%s\n' "$key" "$value" >>"$tmp_file"
+    fi
+
+    mv "$tmp_file" .env
+}
+
+sync_app_port_env() {
+    if [ -z "${APP_PORT:-}" ]; then
+        return
+    fi
+
+    upsert_env_value APP_PORT "$APP_PORT"
+    upsert_env_value APP_URL "http://localhost:${APP_PORT}"
+}
+
 wait_for_mysql() {
     elapsed=0
 
@@ -58,6 +82,8 @@ fi
 if [ ! -f .env ]; then
     cp .env.example .env
 fi
+
+sync_app_port_env
 
 docker compose up -d --build
 
