@@ -25,7 +25,7 @@ class AuthorFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->unique()->name(),
+            'name' => sprintf('%s %s', fake()->firstName(), fake()->lastName()),
         ];
     }
 }

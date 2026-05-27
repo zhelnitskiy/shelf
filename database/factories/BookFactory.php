@@ -16,6 +16,21 @@ class BookFactory extends Factory
     /**
      * @var list<string>
      */
+    private const TITLE_ADJECTIVES = [
+        'Cold',
+        'Dark',
+        'Deep',
+        'Lost',
+        'Pale',
+        'Red',
+        'Silent',
+        'Still',
+        'Wild',
+    ];
+
+    /**
+     * @var list<string>
+     */
     private const TITLE_NOUNS = [
         'Blood',
         'Bone',
@@ -25,8 +40,13 @@ class BookFactory extends Factory
         'Flood',
         'Grief',
         'Hunger',
+        'Passage',
         'Plague',
+        'Ridge',
+        'Road',
         'Scar',
+        'Shore',
+        'Sky',
         'Stone',
         'Thorn',
         'Tide',
@@ -40,7 +60,6 @@ class BookFactory extends Factory
         'Big Sur',
         'Catalina',
         'El Capitan',
-        'Mavericks',
         'Mojave',
         'Monterey',
         'Sequoia',
@@ -77,7 +96,7 @@ class BookFactory extends Factory
     /**
      * @return Factory<Book>
      */
-    public function complete(): Factory
+    public function withGeneratedRelations(): Factory
     {
         return $this
             ->hasAttached(Author::factory(), [], 'authors')
@@ -94,28 +113,56 @@ class BookFactory extends Factory
 
     private function generateTitle(): string
     {
-        /** @var list<string> $patterns */
-        $patterns = [
-            'The %s',
-            'The %s of the %s',
-            '%s of the %s',
-            'Beyond the %s',
-            'The Last %s',
-            'Return to %s',
-            '%s and %s',
-        ];
+        /** @var 'noun'|'adjective_noun'|'noun_noun'|'noun_place'|'place' $pattern */
+        $pattern = fake()->randomElement([
+            'noun',
+            'noun',
+            'adjective_noun',
+            'adjective_noun',
+            'noun_noun',
+            'noun_noun',
+            'noun_place',
+            'place',
+        ]);
 
-        $pattern = fake()->randomElement($patterns);
+        return match ($pattern) {
+            'noun' => sprintf(
+                fake()->randomElement([
+                    'The %s',
+                    'Beneath the %s',
+                ]),
+                $this->titleNoun(),
+            ),
+            'adjective_noun' => sprintf(
+                fake()->randomElement([
+                    'The %s %s',
+                    'A %s %s',
+                ]),
+                $this->titleAdjective(),
+                $this->titleNoun(),
+            ),
+            'noun_noun' => sprintf(
+                fake()->randomElement([
+                    '%s and %s',
+                    '%s of the %s',
+                ]),
+                ...$this->twoDistinctTitleNouns(),
+            ),
+            'noun_place' => sprintf(
+                'A %s in %s',
+                $this->titleNoun(),
+                $this->titlePlace(),
+            ),
+            'place' => sprintf(
+                'Return to %s',
+                $this->titlePlace(),
+            ),
+        };
+    }
 
-        if ($pattern === 'Return to %s') {
-            return sprintf($pattern, $this->titlePlace());
-        }
-
-        if (substr_count($pattern, '%s') === 1) {
-            return sprintf($pattern, $this->titleNoun());
-        }
-
-        return sprintf($pattern, $this->titleNoun(), $this->titleNoun());
+    private function titleAdjective(): string
+    {
+        return fake()->randomElement(self::TITLE_ADJECTIVES);
     }
 
     private function titleNoun(): string
@@ -126,5 +173,17 @@ class BookFactory extends Factory
     private function titlePlace(): string
     {
         return fake()->randomElement(self::TITLE_PLACES);
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private function twoDistinctTitleNouns(): array
+    {
+        $nouns = self::TITLE_NOUNS;
+
+        shuffle($nouns);
+
+        return [$nouns[0], $nouns[1]];
     }
 }
