@@ -52,6 +52,7 @@ upsert_env_value() {
     fi
 
     mv "$tmp_file" .env
+    chmod 644 .env
 }
 
 sync_app_port_env() {
@@ -138,6 +139,8 @@ fi
 if [ ! -f .env ]; then
     cp .env.example .env
 fi
+
+chmod 644 .env
 
 if [ "$non_interactive" -eq 0 ] && [ -t 0 ]; then
     if [ -z "${COMPOSE_PROJECT_NAME:-}" ]; then
