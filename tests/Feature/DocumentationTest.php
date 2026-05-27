@@ -12,7 +12,7 @@ class DocumentationTest extends TestCase
     public function test_root_redirects_to_swagger_ui(): void
     {
         $this->get('/')
-            ->assertRedirect('/api/documentation');
+            ->assertRedirect(route('l5-swagger.default.api'));
     }
 
     public function test_api_not_found_is_rendered_as_json_for_generic_accept_header(): void

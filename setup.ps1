@@ -1,6 +1,12 @@
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
+param(
+    [string]$Project,
+    [string]$Port,
+    [switch]$NonInteractive
+)
+
 $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $ProjectRoot
 
@@ -45,6 +51,10 @@ function Test-DockerComposeV2 {
     }
 }
 
+function Get-SetupMarker {
+    return '.setup-complete'
+}
+
 function Set-EnvValue {
     param(
         [Parameter(Mandatory = $true)]
@@ -85,11 +95,19 @@ function Sync-AppPortEnv {
     Set-EnvValue -Key 'APP_URL' -Value "http://localhost:$($env:APP_PORT)"
 }
 
+function Sync-ComposeProjectEnv {
+    if ([string]::IsNullOrWhiteSpace($env:COMPOSE_PROJECT_NAME)) {
+        return
+    }
+
+    Set-EnvValue -Key 'COMPOSE_PROJECT_NAME' -Value $env:COMPOSE_PROJECT_NAME
+}
+
 function Wait-ForMySql {
     $elapsed = 0
 
     while ($elapsed -le 60) {
-        & docker compose exec -T mysql sh -lc 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqladmin ping -h 127.0.0.1 -uroot --silent' *> $null
+        & docker compose exec -T mysql sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqladmin ping -h 127.0.0.1 -uroot --silent' *> $null
 
         if ($LASTEXITCODE -eq 0) {
             return
@@ -122,7 +140,17 @@ function Get-AppPort {
 Require-Command -Name 'docker'
 Test-DockerComposeV2
 
-if (Test-Path .setup-complete) {
+if (-not [string]::IsNullOrWhiteSpace($Project)) {
+    $env:COMPOSE_PROJECT_NAME = $Project
+}
+
+if (-not [string]::IsNullOrWhiteSpace($Port)) {
+    $env:APP_PORT = $Port
+}
+
+$setupMarker = Get-SetupMarker
+
+if (Test-Path $setupMarker) {
     Write-Host 'Project is already initialized.'
     Write-Host 'Use make up or make restart instead.'
     exit 0
@@ -134,8 +162,28 @@ if (-not (Test-Path .env)) {
 
 Sync-AppPortEnv
 
+if (-not $NonInteractive.IsPresent) {
+    if ([string]::IsNullOrWhiteSpace($env:COMPOSE_PROJECT_NAME)) {
+        $answer = Read-Host 'Compose project name ("shelf")'
+        if (-not [string]::IsNullOrWhiteSpace($answer)) {
+            $env:COMPOSE_PROJECT_NAME = $answer
+        }
+    }
+
+    if ([string]::IsNullOrWhiteSpace($env:APP_PORT)) {
+        $currentPort = Get-AppPort
+        $answer = Read-Host "App port ($currentPort)"
+        if (-not [string]::IsNullOrWhiteSpace($answer)) {
+            $env:APP_PORT = $answer
+        }
+    }
+}
+
+Sync-ComposeProjectEnv
+Sync-AppPortEnv
+
 Invoke-External -Command @('docker', 'compose', 'up', '-d', '--build')
-Invoke-External -Command @('docker', 'compose', 'exec', '-T', 'app', 'sh', '-lc', 'mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs storage/api-docs && chown -R www-data:www-data bootstrap/cache storage/framework storage/logs storage/api-docs && chmod -R ug+rwX bootstrap/cache storage/framework storage/logs storage/api-docs')
+Invoke-External -Command @('docker', 'compose', 'exec', '-T', 'app', 'sh', '-c', 'mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs storage/api-docs && chown -R www-data:www-data bootstrap/cache storage/framework storage/logs storage/api-docs && chmod -R ug+rwX bootstrap/cache storage/framework storage/logs storage/api-docs')
 
 Wait-ForMySql
 
@@ -144,7 +192,7 @@ Invoke-External -Command @('docker', 'compose', 'exec', '-T', 'app', 'php', 'art
 Invoke-External -Command @('docker', 'compose', 'exec', '-T', 'app', 'php', 'artisan', 'migrate:fresh', '--seed', '--force')
 Invoke-External -Command @('docker', 'compose', 'exec', '-T', 'app', 'php', 'artisan', 'l5-swagger:generate')
 
-New-Item -ItemType File -Path .setup-complete -Force | Out-Null
+New-Item -ItemType File -Path $setupMarker -Force | Out-Null
 
 $appPort = Get-AppPort
 Write-Host "Shelf is ready: http://localhost:$appPort/"
