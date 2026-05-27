@@ -3,5 +3,5 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return redirect('/api/documentation');
+    return redirect()->route('l5-swagger.default.api');
 });

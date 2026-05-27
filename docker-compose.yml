@@ -5,8 +5,13 @@ services:
     working_dir: /var/www
     volumes:
       - ./:/var/www
+      - laravel_bootstrap_cache:/var/www/bootstrap/cache
+      - laravel_storage_framework:/var/www/storage/framework
+      - laravel_storage_logs:/var/www/storage/logs
+      - laravel_storage_api_docs:/var/www/storage/api-docs
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
 
   nginx:
     image: nginx:stable-alpine
@@ -25,3 +30,18 @@ services:
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysqladmin ping -h 127.0.0.1 -uroot --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  laravel_bootstrap_cache:
+  laravel_storage_framework:
+  laravel_storage_logs:
+  laravel_storage_api_docs:
+  mysql_data:

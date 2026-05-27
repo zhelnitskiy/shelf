@@ -129,9 +129,13 @@ If automatic setup fails, run the initialization steps manually.
 ### macOS / Linux / WSL
 
 ```bash
+[ -f .env ] || cp .env.example .env
+
 docker compose up -d --build
 
-docker compose exec -T app sh -lc 'mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs storage/api-docs && chmod -R 775 bootstrap/cache storage/framework storage/logs storage/api-docs'
+docker compose exec -T app sh -lc 'mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs storage/api-docs && chown -R www-data:www-data bootstrap/cache storage/framework storage/logs storage/api-docs && chmod -R ug+rwX bootstrap/cache storage/framework storage/logs storage/api-docs'
+
+until docker compose exec -T mysql sh -lc 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqladmin ping -h 127.0.0.1 -uroot --silent' >/dev/null 2>&1; do sleep 2; done
 
 docker compose exec -T app composer install --no-interaction --prefer-dist
 
@@ -147,9 +151,13 @@ touch .setup-complete
 ### Windows PowerShell
 
 ```powershell
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+
 docker compose up -d --build
 
-docker compose exec -T app sh -lc 'mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs storage/api-docs && chmod -R 775 bootstrap/cache storage/framework storage/logs storage/api-docs'
+docker compose exec -T app sh -lc 'mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs storage/api-docs && chown -R www-data:www-data bootstrap/cache storage/framework storage/logs storage/api-docs && chmod -R ug+rwX bootstrap/cache storage/framework storage/logs storage/api-docs'
+
+while (-not (docker compose exec -T mysql sh -lc 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqladmin ping -h 127.0.0.1 -uroot --silent' *> $null; $LASTEXITCODE -eq 0)) { Start-Sleep -Seconds 2 }
 
 docker compose exec -T app composer install --no-interaction --prefer-dist
 
