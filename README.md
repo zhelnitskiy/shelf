@@ -16,5 +16,15 @@ Initial project bootstrap. The application skeleton and Docker environment are p
 ## Run
 
 ```bash
-docker compose up --build
+make up
 ```
+
+## Seed Demo Data
+
+Use a fresh database when generating demo data:
+
+```bash
+make seed-fresh
+```
+
+`GenreSeeder` is idempotent because genres are a fixed catalog. `AuthorSeeder`, `PublisherSeeder`, and `BookSeeder` generate demo data and intentionally expect empty tables.
