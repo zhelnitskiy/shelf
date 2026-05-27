@@ -9,10 +9,13 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    env:
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ${{ github.workspace }}/database/database.sqlite
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -27,6 +30,7 @@ jobs:
       - name: Prepare environment
         run: |
           cp .env.example .env
+          php -r "file_exists('database/database.sqlite') || touch('database/database.sqlite');"
           php artisan key:generate
 
       - name: Run code style check
