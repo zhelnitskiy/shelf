@@ -135,7 +135,7 @@ if (-not (Test-Path .env)) {
 Sync-AppPortEnv
 
 Invoke-External -Command @('docker', 'compose', 'up', '-d', '--build')
-Invoke-External -Command @('docker', 'compose', 'exec', '-T', 'app', 'sh', '-lc', 'mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs storage/api-docs && chmod -R 775 bootstrap/cache storage/framework storage/logs storage/api-docs')
+Invoke-External -Command @('docker', 'compose', 'exec', '-T', 'app', 'sh', '-lc', 'mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs storage/api-docs && chown -R www-data:www-data bootstrap/cache storage/framework storage/logs storage/api-docs && chmod -R ug+rwX bootstrap/cache storage/framework storage/logs storage/api-docs')
 
 Wait-ForMySql
 
