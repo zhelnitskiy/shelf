@@ -61,6 +61,8 @@ fi
 
 docker compose up -d --build
 
+docker compose exec -T app sh -lc 'mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs storage/api-docs && chmod -R 775 bootstrap/cache storage/framework storage/logs storage/api-docs'
+
 wait_for_mysql
 
 docker compose exec -T app composer install --no-interaction --prefer-dist
