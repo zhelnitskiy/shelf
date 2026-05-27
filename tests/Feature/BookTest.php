@@ -116,6 +116,31 @@ class BookTest extends TestCase
         ]);
     }
 
+    public function test_book_create_accepts_price_with_comma_decimal_separator(): void
+    {
+        $author = Author::factory()->create();
+        $genre = Genre::factory()->create();
+
+        $response = $this->postJson('/api/v1/books', [
+            'title' => 'Comma Price Book',
+            'author_ids' => [$author->id],
+            'genre_ids' => [$genre->id],
+            'published_at' => '2024-05-01',
+            'word_count' => 50000,
+            'price' => '19,99',
+            'currency' => 'USD',
+        ]);
+
+        $response
+            ->assertCreated()
+            ->assertJsonPath('data.price', '19.99');
+
+        $this->assertDatabaseHas('books', [
+            'title' => 'Comma Price Book',
+            'price' => '19.99',
+        ]);
+    }
+
     public function test_book_create_rejects_empty_payload(): void
     {
         $response = $this->postJson('/api/v1/books', []);
@@ -288,6 +313,40 @@ class BookTest extends TestCase
 
         $this->assertSameSorted($authorIds, $book->authors()->pluck('authors.id')->all());
         $this->assertSameSorted($genreIds, $book->genres()->pluck('genres.id')->all());
+    }
+
+    public function test_book_update_accepts_price_with_comma_decimal_separator(): void
+    {
+        $book = $this->createCompleteBook();
+
+        $response = $this->patchJson("/api/v1/books/{$book->id}", [
+            'price' => '14,50',
+        ]);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.price', '14.50');
+
+        $this->assertDatabaseHas('books', [
+            'id' => $book->id,
+            'price' => '14.50',
+        ]);
+    }
+
+    public function test_book_update_rejects_price_with_thousands_separator(): void
+    {
+        $book = $this->createCompleteBook();
+
+        $response = $this->patchJson("/api/v1/books/{$book->id}", [
+            'price' => '15,242.99',
+        ]);
+
+        $response
+            ->assertUnprocessable()
+            ->assertJsonPath(
+                'errors.price.0',
+                'The price must be a positive decimal amount like 19.99 or 19,99. Thousands separators are not allowed.',
+            );
     }
 
     public function test_update_returns_not_found_for_missing_book(): void
