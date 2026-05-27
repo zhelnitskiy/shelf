@@ -1,4 +1,4 @@
-.PHONY: up down build restart bash artisan composer test fix lint stan check migrate-fresh seed-fresh
+.PHONY: up down build restart bash artisan composer swagger test fix lint stan check migrate-fresh seed-fresh
 
 up:
 	docker compose up -d
@@ -40,3 +40,6 @@ migrate-fresh:
 
 seed-fresh:
 	docker compose exec app php artisan migrate:fresh --seed
+
+swagger:
+	docker compose exec app php artisan l5-swagger:generate

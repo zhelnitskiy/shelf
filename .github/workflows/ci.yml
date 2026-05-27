@@ -38,5 +38,8 @@ jobs:
       - name: Verify demo seeders
         run: php artisan migrate:fresh --seed --no-interaction
 
+      - name: Generate OpenAPI spec
+        run: composer swagger
+
       - name: Run tests
         run: composer test
