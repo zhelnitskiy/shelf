@@ -49,7 +49,7 @@ function Wait-ForMySql {
     $elapsed = 0
 
     while ($elapsed -le 60) {
-        & docker compose exec -T mysql sh -lc 'mysqladmin ping -h 127.0.0.1 -uroot -p"$MYSQL_ROOT_PASSWORD" --silent' *> $null
+        & docker compose exec -T mysql sh -lc 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqladmin ping -h 127.0.0.1 -uroot --silent' *> $null
 
         if ($LASTEXITCODE -eq 0) {
             return

@@ -2,7 +2,6 @@ services:
   app:
     build:
       context: .
-    container_name: shelf-app
     working_dir: /var/www
     volumes:
       - ./:/var/www
@@ -11,7 +10,6 @@ services:
 
   nginx:
     image: nginx:stable-alpine
-    container_name: shelf-nginx
     ports:
       - "${APP_PORT:-8000}:80"
     volumes:
@@ -22,11 +20,8 @@ services:
 
   mysql:
     image: mysql:8.4
-    container_name: shelf-mysql
     environment:
       MYSQL_DATABASE: ${DB_DATABASE}
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
-    ports:
-      - "3306:3306"

@@ -21,6 +21,10 @@ REST API application for a book library.
 For the first-time project setup:
 
 ```bash
+git clone https://github.com/zhelnitskiy/shelf.git
+
+cd shelf
+
 make setup
 ```
 
@@ -48,6 +52,28 @@ Common commands:
 | `make swagger`       | Generate Swagger/OpenAPI documentation |
 
 Other available commands can be found in the `Makefile`.
+
+## Common Issues
+
+### Port 8000 is already allocated
+
+Example error:
+
+```txt
+Error response from daemon: failed to set up container networking: Bind for 0.0.0.0:8000 failed: port is already allocated
+```
+
+Cause:
+
+Another application or another instance of the project is already using port `8000`.
+
+Solution:
+
+Change `APP_PORT` in `.env`, for example:
+
+```env
+APP_PORT=8001
+```
 
 ## Requirement Checklist
 
