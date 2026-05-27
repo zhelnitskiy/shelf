@@ -1,4 +1,7 @@
-.PHONY: up down build restart bash artisan composer swagger test fix lint stan check migrate-fresh seed-fresh
+.PHONY: setup up down build restart bash artisan composer swagger test fix lint stan check migrate-fresh seed-fresh
+
+setup:
+	sh ./setup.sh
 
 up:
 	docker compose up -d
