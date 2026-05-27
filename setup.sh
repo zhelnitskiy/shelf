@@ -87,7 +87,7 @@ sync_app_port_env
 
 docker compose up -d --build
 
-docker compose exec -T app sh -lc 'mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs storage/api-docs && chmod -R 775 bootstrap/cache storage/framework storage/logs storage/api-docs'
+docker compose exec -T app sh -lc 'mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs storage/api-docs && chown -R www-data:www-data bootstrap/cache storage/framework storage/logs storage/api-docs && chmod -R ug+rwX bootstrap/cache storage/framework storage/logs storage/api-docs'
 
 wait_for_mysql
 
